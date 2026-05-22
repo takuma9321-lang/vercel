@@ -46,10 +46,11 @@
     </style>
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@NS_Photogtaph" /> <meta property="og:url" content="https://vercel-henna-delta-92.vercel.app/" />
+    <meta name="twitter:site" content="@NS_Photogtaph" /> 
+    <meta property="og:url" content="https://vercel-ns-portfolio.vercel.app/" />
     <meta property="og:title" content="NS PORTFOLIO | FRAGMENTS" />
     <meta property="og:description" content="NSが撮影したポートレート・コスプレ写真のギャラリーサイトです。" />
-    <meta property="og:image" content="https://vercel-henna-delta-92.vercel.app/images/og-card.webp" />
+    <meta property="og:image" content="https://vercel-ns-portfolio.vercel.app/images/hero.jpg" />
 
 </head>
 <body class="text-white tracking-[0.25em] page-fade-in">
@@ -172,7 +173,7 @@
             observer.observe(el);
         });
 
-        // 4. モーダルの開閉処理（生成が終わったこの位置で登録するのが正解！）
+        // 4. モーダルの開閉処理
         const modal = document.getElementById('modal');
         const modalImg = document.getElementById('modal-img');
         const modalContainer = document.getElementById('modal-container');
@@ -199,8 +200,8 @@
     <script src="https://unpkg.com/@studio-freight/lenis@1.0.34/dist/lenis.min.js"></script>
     <script>
         const lenis = new Lenis({
-            duration: 1.2,   // スクロールの滑らかさ（数字が大きいほどヌルヌル動く）
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // 心地いい減速カーブ
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             direction: 'vertical',
             gestureDirection: 'vertical',
             smoothWaveform: true,
