@@ -140,4 +140,53 @@
         // 3. スクロールフェードイン
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('active'); });
-        }, { threshold: 0.1
+        }, { threshold: 0.1 });
+        
+        document.querySelectorAll('.reveal').forEach((el, i) => {
+            el.style.transitionDelay = `${(i % 4) * 0.15}s`;
+            observer.observe(el);
+        });
+
+        // 4. モーダルの開閉処理
+        const modal = document.getElementById('modal');
+        const modalImg = document.getElementById('modal-img');
+        const modalContainer = document.getElementById('modal-container');
+
+        document.querySelectorAll('.gallery-item').forEach(item => {
+            item.addEventListener('click', () => {
+                modalImg.src = item.querySelector('img').src;
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                document.body.style.overflow = 'hidden';
+                setTimeout(() => modalContainer.classList.remove('scale-95'), 10);
+            });
+        });
+
+        function hide() {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContainer.classList.add('scale-95');
+            document.body.style.overflow = '';
+        }
+
+        modal.addEventListener('click', hide);
+        window.onkeydown = (e) => { if(e.key === 'Escape') hide(); };
+    </script>
+
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.34/dist/lenis.min.js"></script>
+    <script>
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            direction: 'vertical',
+            gestureDirection: 'vertical',
+            smoothWaveform: true,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+    </script>
+
+</body>
+</html>
