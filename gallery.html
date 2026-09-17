@@ -37,6 +37,35 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: #050505; }
         ::-webkit-scrollbar-thumb { background: #333; }
+
+        /* モーダル画像のスライド切り替えアニメーション */
+        .slide-next-out {
+            animation: slideNextOut 0.25s cubic-bezier(0.2, 1, 0.3, 1) forwards;
+        }
+        .slide-next-in {
+            animation: slideNextIn 0.25s cubic-bezier(0.2, 1, 0.3, 1) forwards;
+        }
+        .slide-prev-out {
+            animation: slidePrevOut 0.25s cubic-bezier(0.2, 1, 0.3, 1) forwards;
+        }
+        .slide-prev-in {
+            animation: slidePrevIn 0.25s cubic-bezier(0.2, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideNextOut {
+            to { opacity: 0; transform: translateX(-40px) scale(0.95); }
+        }
+        @keyframes slideNextIn {
+            from { opacity: 0; transform: translateX(40px) scale(0.95); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes slidePrevOut {
+            to { opacity: 0; transform: translateX(40px) scale(0.95); }
+        }
+        @keyframes slidePrevIn {
+            from { opacity: 0; transform: translateX(-40px) scale(0.95); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
     </style>
 
     <meta name="twitter:card" content="summary_large_image" />
@@ -278,6 +307,118 @@
             requestAnimationFrame(raf);
         }
         requestAnimationFrame(raf);
+
+        // 4. モーダル ＆ スライド移動処理
+        const modal = document.getElementById('modal');
+        const modalImg = document.getElementById('modal-img');
+        const modalContainer = document.getElementById('modal-container');
+        const modalCounter = document.getElementById('modal-counter');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const closeBtn = document.getElementById('modal-close-btn');
+        const prevBtn = document.getElementById('modal-prev-btn');
+        const nextBtn = document.getElementById('modal-next-btn');
+
+        let isAnimating = false; // 連打防止フラグ
+
+        // モーダルを開く処理
+        function openModal(index) {
+            currentIndex = index;
+            updateModalImage();
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => modalContainer.classList.remove('scale-95'), 10);
+        }
+
+        // 画像の更新処理
+        function updateModalImage() {
+            const imageNum = currentIndex + 1;
+            const labelNum = String(imageNum).padStart(2, '0');
+            modalImg.src = `images/gallery_pics/gallery_pics (${imageNum}).webp`;
+            modalCounter.textContent = `REC / ${labelNum} (${labelNum} / ${String(TOTAL_IMAGES).padStart(2, '0')})`;
+        }
+
+        // モーダルを閉じる処理
+        function hideModal() {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modalContainer.classList.add('scale-95');
+            document.body.style.overflow = '';
+        }
+
+        // スライド切り替えアニメーション付きの画像遷移
+        function changeImage(direction) {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            const outClass = direction === 'next' ? 'slide-next-out' : 'slide-prev-out';
+            const inClass = direction === 'next' ? 'slide-next-in' : 'slide-prev-in';
+
+            // 1. 現在の画像をフェードアウト/スライドアウト
+            modalImg.classList.add(outClass);
+
+            setTimeout(() => {
+                // 2. インデックス更新と画像ソース差し替え
+                if (direction === 'next') {
+                    currentIndex = (currentIndex + 1) % TOTAL_IMAGES;
+                } else {
+                    currentIndex = (currentIndex - 1 + TOTAL_IMAGES) % TOTAL_IMAGES;
+                }
+                updateModalImage();
+
+                // 3. アニメーションクラスの付け替え（新しい画像をイン）
+                modalImg.classList.remove(outClass);
+                modalImg.classList.add(inClass);
+
+                setTimeout(() => {
+                    modalImg.classList.remove(inClass);
+                    isAnimating = false;
+                }, 250);
+            }, 150);
+        }
+
+        // イベント設定：各ギャラリーアイテムをクリック
+        document.querySelectorAll('.gallery-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const index = parseInt(item.getAttribute('data-index'));
+                openModal(index);
+            });
+        });
+
+        // イベント設定：ボタン類
+        closeBtn.addEventListener('click', hideModal);
+        modalOverlay.addEventListener('click', hideModal);
+        nextBtn.addEventListener('click', (e) => { e.stopPropagation(); changeImage('next'); });
+        prevBtn.addEventListener('click', (e) => { e.stopPropagation(); changeImage('prev'); });
+
+        // イベント設定：キーボード操作
+        window.addEventListener('keydown', (e) => {
+            if (modal.classList.contains('opacity-0')) return;
+            if (e.key === 'Escape') hideModal();
+            if (e.key === 'ArrowRight') changeImage('next');
+            if (e.key === 'ArrowLeft') changeImage('prev');
+        });
+
+        // 📱 スマホ用フリック/スワイプジェスチャー対応
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        modal.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        modal.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const swipeThreshold = 40; // スワイプと判定する最小距離(px)
+            if (touchEndX < touchStartX - swipeThreshold) {
+                changeImage('next'); // 左スワイプ -> 次へ
+            }
+            if (touchEndX > touchStartX + swipeThreshold) {
+                changeImage('prev'); // 右スワイプ -> 前へ
+            }
+        }
     </script>
 
 </body>
