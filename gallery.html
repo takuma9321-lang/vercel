@@ -200,115 +200,7 @@
             observer.observe(el);
         });
 
-        // 4. モーダル ＆ スライド移動処理
-        const modal = document.getElementById('modal');
-        const modalImg = document.getElementById('modal-img');
-        const modalContainer = document.getElementById('modal-container');
-        const modalCounter = document.getElementById('modal-counter');
-        const modalOverlay = document.getElementById('modal-overlay');
-        const closeBtn = document.getElementById('modal-close-btn');
-        const prevBtn = document.getElementById('modal-prev-btn');
-        const nextBtn = document.getElementById('modal-next-btn');
-
-        // モーダルを開く処理
-        function openModal(index) {
-            currentIndex = index;
-            updateModalImage();
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            document.body.style.overflow = 'hidden';
-            setTimeout(() => modalContainer.classList.remove('scale-95'), 10);
-        }
-
-        // 画像の更新処理
-        function updateModalImage() {
-            const imageNum = currentIndex + 1;
-            const labelNum = String(imageNum).padStart(2, '0');
-            modalImg.src = `images/gallery_pics/gallery_pics (${imageNum}).webp`;
-            modalCounter.textContent = `REC / ${labelNum} (${labelNum} / ${String(TOTAL_IMAGES).padStart(2, '0')})`;
-        }
-
-        // モーダルを閉じる処理
-        function hideModal() {
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            modalContainer.classList.add('scale-95');
-            document.body.style.overflow = '';
-        }
-
-        // 次の画像へ
-        function nextImage() {
-            currentIndex = (currentIndex + 1) % TOTAL_IMAGES;
-            updateModalImage();
-        }
-
-        // 前の画像へ
-        function prevImage() {
-            currentIndex = (currentIndex - 1 + TOTAL_IMAGES) % TOTAL_IMAGES;
-            updateModalImage();
-        }
-
-        // イベント設定：各ギャラリーアイテムをクリック
-        document.querySelectorAll('.gallery-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const index = parseInt(item.getAttribute('data-index'));
-                openModal(index);
-            });
-        });
-
-        // イベント設定：ボタン類
-        closeBtn.addEventListener('click', hideModal);
-        modalOverlay.addEventListener('click', hideModal);
-        nextBtn.addEventListener('click', (e) => { e.stopPropagation(); nextImage(); });
-        prevBtn.addEventListener('click', (e) => { e.stopPropagation(); prevImage(); });
-
-        // イベント設定：キーボード操作
-        window.addEventListener('keydown', (e) => {
-            if (modal.classList.contains('opacity-0')) return;
-            if (e.key === 'Escape') hideModal();
-            if (e.key === 'ArrowRight') nextImage();
-            if (e.key === 'ArrowLeft') prevImage();
-        });
-
-        // 📱 スマホ用フリック/スワイプジェスチャー対応
-        let touchStartX = 0;
-        let touchEndX = 0;
-
-        modal.addEventListener('touchstart', (e) => {
-            touchStartX = e.changedTouches[0].screenX;
-        }, { passive: true });
-
-        modal.addEventListener('touchend', (e) => {
-            touchEndX = e.changedTouches[0].screenX;
-            handleSwipe();
-        }, { passive: true });
-
-        function handleSwipe() {
-            const swipeThreshold = 50; // スワイプと判定する最小距離(px)
-            if (touchEndX < touchStartX - swipeThreshold) {
-                nextImage(); // 左スワイプ -> 次へ
-            }
-            if (touchEndX > touchStartX + swipeThreshold) {
-                prevImage(); // 右スワイプ -> 前へ
-            }
-        }
-    </script>
-
-    <script src="https://unpkg.com/@studio-freight/lenis@1.0.34/dist/lenis.min.js"></script>
-    <script>
-        const lenis = new Lenis({
-            duration: 1.2,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-            direction: 'vertical',
-            gestureDirection: 'vertical',
-            smoothWaveform: true,
-        });
-
-        function raf(time) {
-            lenis.raf(time);
-            requestAnimationFrame(raf);
-        }
-        requestAnimationFrame(raf);
-
-        // 4. モーダル ＆ スライド移動処理
+        // 4. モーダル ＆ スライド移動処理（アニメーション対応版）
         const modal = document.getElementById('modal');
         const modalImg = document.getElementById('modal-img');
         const modalContainer = document.getElementById('modal-container');
@@ -419,6 +311,24 @@
                 changeImage('prev'); // 右スワイプ -> 前へ
             }
         }
+    </script>
+
+    <!-- スムーススクロール (Lenis) -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.34/dist/lenis.min.js"></script>
+    <script>
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            direction: 'vertical',
+            gestureDirection: 'vertical',
+            smoothWaveform: true,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
     </script>
 
 </body>
