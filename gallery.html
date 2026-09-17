@@ -41,10 +41,10 @@
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@NS_Photogtaph" /> 
-    <meta property="og:url" content="https://vercel-ns-portfolio.vercel.app/gallery.html" />
+    <meta property="og:url" content="https://ns-photograph-portfolio.vercel.app/gallery.html" />
     <meta property="og:title" content="NS PORTFOLIO | FRAGMENTS" />
     <meta property="og:description" content="NSが撮影したポートレート・コスプレ写真のギャラリーサイトです。" />
-    <meta property="og:image" content="https://vercel-ns-portfolio.vercel.app/images/og-card.webp.png" />
+    <meta property="og:image" content="https://ns-photograph-portfolio.vercel.app/images/og-card.webp.png" />
 
 </head>
 <body class="text-white tracking-[0.25em] page-fade-in">
@@ -65,7 +65,7 @@
 
     <main class="max-w-[2000px] mx-auto px-4 pb-32">
         <div id="masonry-container" class="columns-3 sm:columns-3 md:columns-4 lg:columns-5 gap-4 space-y-4">
-            </div>
+        </div>
     </main>
 
     <section id="about" class="border-t border-white/5 bg-[#080808] py-48 px-6 relative">
@@ -97,16 +97,39 @@
         <p class="text-[8px] text-neutral-500 tracking-[0.3em] uppercase font-normal">© 2026 NS PHOTOGRAPHY. ALL RIGHTS RESERVED.</p>
     </footer>
 
-    <div id="modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-500 cursor-zoom-out">
-        <div id="modal-overlay" class="absolute inset-0"></div>
-        <div class="relative max-w-full max-h-[85vh] z-10 scale-95 transition-transform duration-500 flex justify-center items-center" id="modal-container">
-            <img id="modal-img" src="" class="max-w-full max-h-[85vh] object-contain shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)]">
+    <!-- 高機能拡張モーダル -->
+    <div id="modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 select-none">
+        <!-- 閉じる用の背景レイヤー -->
+        <div id="modal-overlay" class="absolute inset-0 cursor-zoom-out"></div>
+        
+        <!-- ヘッダーUI（カウンター ＆ 閉じるボタン） -->
+        <div class="absolute top-6 left-6 z-20 text-[9px] text-white/60 tracking-[0.4em] uppercase font-mono pointer-events-none">
+            <span id="modal-counter">REC / 01</span>
         </div>
+        <button id="modal-close-btn" class="absolute top-6 right-6 z-20 text-white/50 hover:text-white transition-colors text-2xl font-thin px-4 py-2 cursor-pointer">
+            ✕
+        </button>
+
+        <!-- 前へボタン（PC用） -->
+        <button id="modal-prev-btn" class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 text-white/30 hover:text-white transition-colors text-3xl font-thin p-4 cursor-pointer hidden sm:block">
+            ‹
+        </button>
+
+        <!-- 画像表示コンテナ -->
+        <div class="relative max-w-full max-h-[85vh] z-10 scale-95 transition-transform duration-300 flex flex-col justify-center items-center pointer-events-none p-4" id="modal-container">
+            <img id="modal-img" src="" class="max-w-full max-h-[80vh] object-contain shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] transition-all duration-200">
+        </div>
+
+        <!-- 次へボタン（PC用） -->
+        <button id="modal-next-btn" class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 text-white/30 hover:text-white transition-colors text-3xl font-thin p-4 cursor-pointer hidden sm:block">
+            ›
+        </button>
     </div>
 
     <script>
-        // 📸 全アーカイブの総枚数（WebP）を変更：20 -> 39
+        // 📸 全アーカイブの総枚数
         const TOTAL_IMAGES = 41;
+        let currentIndex = 0; // 現在開いている画像のインデックス (0始まり)
 
         // 1. 画像の自動生成（.webp仕様）
         const container = document.getElementById('masonry-container');
@@ -116,6 +139,7 @@
             
             const item = document.createElement('div');
             item.className = 'gallery-item reveal break-inside-avoid mb-4 group cursor-zoom-in relative overflow-hidden bg-black';
+            item.setAttribute('data-index', i - 1); // インデックスを保持
             item.innerHTML = `
                 <img src="images/gallery_pics/${fileName}.webp" loading="lazy" class="w-full h-auto opacity-100 group-hover:scale-[1.03] transition-all duration-700 ease-out" alt="Archive ${labelNum}">
                 <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-3 pointer-events-none">
@@ -147,28 +171,96 @@
             observer.observe(el);
         });
 
-        // 4. モーダルの開閉処理
+        // 4. モーダル ＆ スライド移動処理
         const modal = document.getElementById('modal');
         const modalImg = document.getElementById('modal-img');
         const modalContainer = document.getElementById('modal-container');
+        const modalCounter = document.getElementById('modal-counter');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const closeBtn = document.getElementById('modal-close-btn');
+        const prevBtn = document.getElementById('modal-prev-btn');
+        const nextBtn = document.getElementById('modal-next-btn');
 
-        document.querySelectorAll('.gallery-item').forEach(item => {
-            item.addEventListener('click', () => {
-                modalImg.src = item.querySelector('img').src;
-                modal.classList.remove('opacity-0', 'pointer-events-none');
-                document.body.style.overflow = 'hidden';
-                setTimeout(() => modalContainer.classList.remove('scale-95'), 10);
-            });
-        });
+        // モーダルを開く処理
+        function openModal(index) {
+            currentIndex = index;
+            updateModalImage();
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => modalContainer.classList.remove('scale-95'), 10);
+        }
 
-        function hide() {
+        // 画像の更新処理
+        function updateModalImage() {
+            const imageNum = currentIndex + 1;
+            const labelNum = String(imageNum).padStart(2, '0');
+            modalImg.src = `images/gallery_pics/gallery_pics (${imageNum}).webp`;
+            modalCounter.textContent = `REC / ${labelNum} (${labelNum} / ${String(TOTAL_IMAGES).padStart(2, '0')})`;
+        }
+
+        // モーダルを閉じる処理
+        function hideModal() {
             modal.classList.add('opacity-0', 'pointer-events-none');
             modalContainer.classList.add('scale-95');
             document.body.style.overflow = '';
         }
 
-        modal.addEventListener('click', hide);
-        window.onkeydown = (e) => { if(e.key === 'Escape') hide(); };
+        // 次の画像へ
+        function nextImage() {
+            currentIndex = (currentIndex + 1) % TOTAL_IMAGES;
+            updateModalImage();
+        }
+
+        // 前の画像へ
+        function prevImage() {
+            currentIndex = (currentIndex - 1 + TOTAL_IMAGES) % TOTAL_IMAGES;
+            updateModalImage();
+        }
+
+        // イベント設定：各ギャラリーアイテムをクリック
+        document.querySelectorAll('.gallery-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const index = parseInt(item.getAttribute('data-index'));
+                openModal(index);
+            });
+        });
+
+        // イベント設定：ボタン類
+        closeBtn.addEventListener('click', hideModal);
+        modalOverlay.addEventListener('click', hideModal);
+        nextBtn.addEventListener('click', (e) => { e.stopPropagation(); nextImage(); });
+        prevBtn.addEventListener('click', (e) => { e.stopPropagation(); prevImage(); });
+
+        // イベント設定：キーボード操作
+        window.addEventListener('keydown', (e) => {
+            if (modal.classList.contains('opacity-0')) return;
+            if (e.key === 'Escape') hideModal();
+            if (e.key === 'ArrowRight') nextImage();
+            if (e.key === 'ArrowLeft') prevImage();
+        });
+
+        // 📱 スマホ用フリック/スワイプジェスチャー対応
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        modal.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        modal.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const swipeThreshold = 50; // スワイプと判定する最小距離(px)
+            if (touchEndX < touchStartX - swipeThreshold) {
+                nextImage(); // 左スワイプ -> 次へ
+            }
+            if (touchEndX > touchStartX + swipeThreshold) {
+                prevImage(); // 右スワイプ -> 前へ
+            }
+        }
     </script>
 
     <script src="https://unpkg.com/@studio-freight/lenis@1.0.34/dist/lenis.min.js"></script>
